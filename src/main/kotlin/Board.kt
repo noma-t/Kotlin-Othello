@@ -1,42 +1,38 @@
 package io.github.nomat
 
 object Board {
-    private var board: Array<ByteArray> = arrayOf(
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 1, 2, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 2, 1, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-        byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-    )
-    val directions: Array<Pair<Int, Int>> = arrayOf(
-        Pair( 0,  1), // right
-        Pair( 1,  1), // right-down
-        Pair( 1,  0), // down
-        Pair( 1, -1), // left-down
-        Pair(-1,  0), // left
-        Pair(-1, -1), // left-up
-        Pair( 0, -1), // up
-        Pair(-1,  1), // right-up
+    private var board: Array<ByteArray> = Array(8) { ByteArray(8) }
+    init {
+        board[3][3] = 1
+        board[4][4] = 1
+        board[3][4] = 2
+        board[4][3] = 2
+    }
+    val directions: Array<Direction> = arrayOf(
+        Direction( 0,  1), // right
+        Direction( 1,  1), // right-down
+        Direction( 1,  0), // down
+        Direction( 1, -1), // left-down
+        Direction(-1,  0), // left
+        Direction(-1, -1), // left-up
+        Direction( 0, -1), // up
+        Direction(-1,  1), // right-up
     )
     
     // true: White, false: Black
     var turn: Boolean = true
-    
     var lastPutPlace = Pair(-1, -1)
     
     
     fun printBoard() {
         println("+---+---+---+---+---+---+---+---+")
-        for (i in 0..7) {
-            for (j in 0..7) {
+        for (row in board) {
+            for (cell in row) {
                 print("| ")
-                when (board[i][j]) {
-                    0.toByte() -> print("  ")
+                when (cell) {
                     1.toByte() -> print("W ")
                     2.toByte() -> print("B ")
+                    else -> print("  ")
                 }
             }
             println("|")
@@ -63,14 +59,9 @@ object Board {
     }
     
     fun checkPlaceableAllDirections(x: Int, y: Int): Int {
-        for (direction in directions) {
-            if (checkPlaceableDirected(x, y, direction) == 0) {
-                return 0
-            }
-        }
-        return 1
+        return if (directions.any { checkPlaceableDirected(x, y, it) == 0 }) 0 else 1
     }
-    fun checkPlaceableDirected(x: Int, y: Int, direction: Pair<Int, Int>): Int {
+    fun checkPlaceableDirected(x: Int, y: Int, direction: Direction): Int {
         val myColor: Byte = if (turn) 1 else 2
         val enemyColor: Byte = if (turn) 2 else 1
         
@@ -78,8 +69,8 @@ object Board {
         var yy = y
 
         for (i in 0..6) {
-            xx += direction.first
-            yy += direction.second
+            xx += direction.x
+            yy += direction.y
             // 範囲外
             if (xx < 0 || xx > 7 || yy < 0 || yy > 7) {
                 // println("out of range $xx $yy $i")
@@ -105,16 +96,11 @@ object Board {
         
     }
     
-    fun flipDisks() {
-        val myColor: Byte = if (turn) 1 else 2
-        val enemyColor: Byte = if (turn) 2 else 1
-        
+    fun flipDisks() {        
         // Check 8 directions
-        for (direction in directions) {
-            flipDisksDirected(direction)
-        }
+        directions.forEach { flipDisksDirected(it) }
     }
-    fun flipDisksDirected(direction: Pair<Int, Int>) {
+    fun flipDisksDirected(direction: Direction) {
         if (checkPlaceableDirected(lastPutPlace.first, lastPutPlace.second, direction) == 1) {
             return
         }
@@ -122,8 +108,8 @@ object Board {
         var y: Int = lastPutPlace.second
         val myColor: Byte = if (turn) 1 else 2
         for (i in 0..6) {
-            x += direction.first
-            y += direction.second
+            x += direction.x
+            y += direction.y
             if (board[y][x] == myColor) {
                 break
             }
